@@ -26,13 +26,13 @@ jobs:
       run: docker pull shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
     - name: Start docker container
       run: docker run -d -p 8080:8080 shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
+    - name: set curl_result to "no"
+      run: echo "no" > curl_result.txt
     - name: cURL - check if page can be accessed
       continue-on-error: true
       run: |
         sleep 5 # curl fails if called immediately without time delay
-        curl http://localhost:8081 -sS 2>/dev/null
-    - name: save curl call to text file
-      run: echo $? > curl_result.txt
+        curl http://localhost:8081 -sS 2>/dev/null && echo "yes" > curl_result.txt
     - name: upload curl_result.txt to be used in other job
       uses: actions/upload-artifact@v1
       with: 
