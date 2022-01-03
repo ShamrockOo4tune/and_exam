@@ -28,7 +28,7 @@ jobs:
       run: docker run -d -p 8080:8080 shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
     - name: cURL - check if page can be accessed
       run: |
-        curl http://localhost:8080 -sS &>/dev/null
+        curl http://localhost:8080
         echo $? > curl_result.txt
     - name: upload curl_result.txt to be used in other job
       uses: actions/upload-artifact@v1
