@@ -31,7 +31,8 @@ jobs:
       run: |
         sleep 5 # curl fails if called immediately without time delay
         curl http://localhost:8081 -sS 2>/dev/null
-        echo $? > curl_result.txt
+    - name: save curl call to text file
+      run: echo $? > curl_result.txt
     - name: upload curl_result.txt to be used in other job
       uses: actions/upload-artifact@v1
       with: 
