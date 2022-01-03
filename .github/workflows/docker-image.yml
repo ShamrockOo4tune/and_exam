@@ -29,7 +29,7 @@ jobs:
     - name: cURL - check if page can be accessed
       run: |
         sleep 5 # curl fails if called immediately without time delay
-        curl http://localhost:8081 -sS &>/dev/null
+        curl http://localhost:8081 -fsS &>/dev/null
         echo $? > curl_result.txt
     - name: upload curl_result.txt to be used in other job
       uses: actions/upload-artifact@v1
