@@ -16,11 +16,22 @@ jobs:
     #   run: docker login -u shamrockoo4tune -p ${{ secrets.SHAMROCKOO4TUNE_DOCKERHUB_PASSWORD }}
     # - name: Push to Docker Hub repo
     #   run: docker push shamrockoo4tune/pyapp:${{ github.sha }}
-      
-  deploy_docker_container:
+  
+  user_acceptance_test:
     runs-on: ubuntu-latest
     needs: [ build_and_push_docker_image ]
     steps:
-    - name: say hello
-      run: echo "hello from Deploy Docker Container job"
-      
+    - name: Pull Docker image
+      #fix this line when ready to switch for versioned containers pull
+      run: docker pull shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
+    - name: Start docker container
+      run: docker run -d -p 8080:8080 shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
+    - name: cURL - check if page can be accessed
+      run: |
+        curl http://localhost:8080 -sS &>/dev/null
+        echo $? > curl_result.txt
+    - name: upload curl_result.txt to be used in other job
+      uses: actions/upload-artifact@v1
+      with: 
+        name: curl_result
+        path: curl_result.txt
