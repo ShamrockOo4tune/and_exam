@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: cd ./py_program_1 && docker build . -t pyapp:$(date +%d.%m.%Y-%H:%M) -f ../dockerfiles/PyDockerfile
+      run: cd ./py_program_1 && docker build . -t pyapp:${{ github.sha }} -f ../dockerfiles/PyDockerfile
   
   deploy_docker_container:
     runs-on: ubuntu-latest
