@@ -20,6 +20,9 @@ jobs:
   user_acceptance_test:
     runs-on: ubuntu-latest
     needs: [ build_and_push_docker_image ]
+    env:
+      #set output to "no" by default
+      result: no 
     outputs:
       output1: ${{ steps.set_result.outputs.test }}
     steps:
@@ -34,7 +37,9 @@ jobs:
       run: |
         # echo "::set-output name=test::no" #set output to "no" by default
         sleep 5 # curl fails if called immediately without time delay
-        curl http://localhost:8080 -sS 2>/dev/null && echo "::set-output name=test::yes"
+        curl http://localhost:8080 -sS 2>/dev/null && env.result=yes
+    - name: set output with curl result yes/no
+      run: echo "::set-output name=test::${{ env.result }}"
         
   deploy_in_aws:
     runs-on: ubuntu-latest
