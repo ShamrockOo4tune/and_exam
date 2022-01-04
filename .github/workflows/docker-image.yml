@@ -31,9 +31,9 @@ jobs:
     - id: set_result
       continue-on-error: true
       run: |
-        echo "::set-output name=test::no"
+        #echo "::set-output name=test::no"
         sleep 5 # curl fails if called immediately without time delay
-        curl http://localhost:8080 -sS 2>/dev/null && echo "::set-output name=test::yes"
+        echo "::set-output name=test::$(curl http://localhost:8080 -sS 2>/dev/null)"
     - name: Print prev job output
       run: echo ${{ steps.set_result.outputs.test }}
       
