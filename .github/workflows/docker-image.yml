@@ -32,7 +32,7 @@ jobs:
       continue-on-error: true
       run: |
         sleep 5 # curl fails if called immediately without time delay
-        echo "::set-output name=test::$(curl http://localhost:8080 -sS 2>/dev/null)"
+        echo "::set-output name=test::$(curl http://localhost:8081 -sS 2>/dev/null)"
     - name: Print prev job output
       run: echo ${{ steps.set_result.outputs.test }}
       
