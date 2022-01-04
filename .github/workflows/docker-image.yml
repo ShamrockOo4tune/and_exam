@@ -59,6 +59,14 @@ jobs:
         aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region:            ${{ env.AWS_REGION_NAME }}
-    - name: Start webserver
-      run: aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }}  
-        
+    #- name: Start webserver
+    #  run: aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }}  
+    - id: get_webserver1_ip
+      run: |
+        # let some time for AWS EC2 to get up and running:
+        sleep 10 
+        echo "::set-output name=public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver1_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
+    - name: Print webserver1 public IP
+      run: echo ${{ steps.get_webserver1_ip.outputs.public_ip }}
+      
+      
