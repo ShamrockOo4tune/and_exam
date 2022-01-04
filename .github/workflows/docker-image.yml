@@ -47,4 +47,4 @@ jobs:
       run: |
         echo $ {{ secrets.AND_EXAM_KEY }} > and_exam_key.pem
         sudo chmod 400 ./and_exam_key.pem
-        ssh -i "~/Downloads/and_exam_key.pem" ec2-user@18.184.65.4
+        ssh -i "./and_exam_key.pem" ec2-user@18.184.65.4
