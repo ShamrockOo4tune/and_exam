@@ -3,6 +3,9 @@ name: CICD_Hello_app
 on:
   push:
     branches: [ master ]
+
+env:
+  AWS_REGION_NAME: "eu-central-1"
   
 jobs:
   build_and_push_docker_image:
@@ -43,8 +46,15 @@ jobs:
     steps:
     - name: Print prev job output
       run: echo ${{ needs.user_acceptance_test.outputs.output1 }}
-    - name: restore SSH from secret and login to EC2
+    - name: install AWS CLI
       run: |
-        echo $ {{ secrets.AND_EXAM_KEY }} > and_exam_key.pem
-        sudo chmod 400 ./and_exam_key.pem
-        ssh -i "./and_exam_key.pem" ec2-user@18.184.65.4
+        sudo apt-get install awscli -y
+        aws --version
+    - name: configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region:            ${{ env.AWS_REGION_NAME }}
+        
+        
