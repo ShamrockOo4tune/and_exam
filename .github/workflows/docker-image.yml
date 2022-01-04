@@ -39,6 +39,8 @@ jobs:
   deploy_in_aws:
     runs-on: ubuntu-latest
     needs: [ build_and_push_docker_image, user_acceptance_test ]
+    #if: needs.deploy.outputs.deploy-status == 'true'
+    if: needs.user_acceptance_test.outputs.output1 != ''
     steps:
     - name: Print prev job output
       run: echo ${{ needs.user_acceptance_test.outputs.output1 }}
