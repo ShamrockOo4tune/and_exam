@@ -28,40 +28,18 @@ jobs:
       run: docker pull shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
     - name: Start docker container
       run: docker run -d -p 8080:8080 shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
-    #- name: set curl_result to "no"
-    #  run: echo "no" > curl_result.txt
     - name: cURL - check if page can be accessed
       id: set_result
       continue-on-error: true
       run: |
-        echo "::set-output name=test::yes" #set output to "no" by default
+        echo "::set-output name=test::no" #set output to "no" by default
         sleep 5 # curl fails if called immediately without time delay
-        # curl http://localhost:8080 -sS 2>/dev/null && echo "yes" > curl_result.txt
         curl http://localhost:8080 -sS 2>/dev/null && echo "::set-output name=test::yes"
-    #- name: upload curl_result.txt to be used in other job
-    #  uses: actions/upload-artifact@v2
-    #  with: 
-    #    name: curl_result
-    #    path: curl_result.txt
-  
+        
   deploy_in_aws:
     runs-on: ubuntu-latest
     needs: [ build_and_push_docker_image, user_acceptance_test ]
     steps:
-      #- name: Download curl_result.txt
-      #  uses: actions/download-artifact@v2
-      #  with:
-      #    name: curl_result
-      #- shell: bash
-      #  run: |
-      #    value=`cat math-homework.txt`
-      #    expr $value \* 9 > math-homework.txt
-      #- name: Upload math result for job 2
-      #  uses: actions/upload-artifact@v2
-      #  with:
-      #    name: homework
-      #    path: math-homework.txt
-
     - name: Print prev job output
       run: echo ${{ needs.user_acceptance_test.outputs.output1 }}
     
