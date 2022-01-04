@@ -32,7 +32,7 @@ jobs:
       id: set_result
       continue-on-error: true
       run: |
-        echo "::set-output name=test::no" #set output to "no" by default
+        # echo "::set-output name=test::no" #set output to "no" by default
         sleep 5 # curl fails if called immediately without time delay
         curl http://localhost:8080 -sS 2>/dev/null && echo "::set-output name=test::yes"
         
