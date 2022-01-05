@@ -17,11 +17,10 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build the Docker image
       run: cd ./py_program_1 && docker build . -t ${{ env.docker-image }} -f ../dockerfiles/PyDockerfile
-    # uncomment when needed to avoid excess traffic while continue developing pipeline
-    # - name: Login to Docker Hub
-    #   run: docker login -u shamrockoo4tune -p ${{ secrets.SHAMROCKOO4TUNE_DOCKERHUB_PASSWORD }}
-    # - name: Push to Docker Hub repo
-    #   run: docker push ${{ env.docker-image }}
+    - name: Login to Docker Hub
+      run: docker login -u shamrockoo4tune -p ${{ secrets.SHAMROCKOO4TUNE_DOCKERHUB_PASSWORD }}
+    - name: Push to Docker Hub repo
+      run: docker push ${{ env.docker-image }}
   
   user_acceptance_test:
     runs-on: ubuntu-latest
@@ -30,10 +29,9 @@ jobs:
       output1: ${{ steps.set_result.outputs.test }}
     steps:
     - name: Pull Docker image
-      #fix this line when ready to switch for versioned containers pull
-      run: docker pull shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
+      run: docker pull ${{ env.docker-image }}
     - name: Start docker container
-      run: docker run -d -p 8080:8080 shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e
+      run: docker run -d -p 8080:8080 ${{ env.docker-image }}
     - id: set_result
       continue-on-error: true
       run: |
