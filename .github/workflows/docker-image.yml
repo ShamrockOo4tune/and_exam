@@ -19,11 +19,13 @@ jobs:
     - name: Build Python app Docker image
       run: cd ./py_program_1 && docker build . -t ${{ env.py_docker-image }} -f ../dockerfiles/PyDockerfile
     - name: Build Golang app Docker image
-      run: pwd && cd ./go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
+      run: cd ./go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_HUB_ACCOUNT }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
     - name: Push images to Docker Hub repo
-      run: docker push ${{ env.py_docker-image }} ${{ env.go_docker-image }}
+      run: |
+        docker push ${{ env.py_docker-image }}
+        docker push ${{ env.go_docker-image }}
   
   website_acceptance_test:
     runs-on: ubuntu-latest
@@ -33,7 +35,9 @@ jobs:
       output2: ${{ steps.set_results.outputs.test2 }}
     steps:
     - name: Pull Docker image
-      run: docker pull ${{ env.py_docker-image }} ${{ env.go_docker-image }}
+      run: |
+        docker pull ${{ env.py_docker-image }} 
+        docker pull ${{ env.go_docker-image }}
     - name: Start docker containers
       run: | 
         docker run -d -p 8080:8080 ${{ env.py_docker-image }}
