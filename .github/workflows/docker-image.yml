@@ -14,6 +14,7 @@ env:
 jobs:
   build_and_push_docker_images:
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v2
     - name: send Telegram message on push
@@ -22,27 +23,31 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          ${{ github.actor }} created commit ${{ github.sha }} in repo ${{ github.repository }}:
+          ${{ github.actor }} created commit: ${{ github.sha }}
           Commit message: ${{ github.event.commits[0].message }}
           Start to build images
+    
     - name: Build Python app Docker image
       run: cd ./py_program_1 && docker build . -t ${{ env.py_docker-image }} -f ../dockerfiles/PyDockerfile
+    
     - name: Build Golang app Docker image
       run: cd ./go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
+    
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_HUB_ACCOUNT }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
+    
     - name: send Telegram message on successfull build
       uses: appleboy/telegram-action@master
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: |
-          Images are ready now
-          Pushing images to Docker Hub
+        message: Images are ready now. Pushing them to Docker Hub
+    
     - name: Push images to Docker Hub repo
       run: |
         docker push ${{ env.py_docker-image }}
         docker push ${{ env.go_docker-image }}
+    
     - name: send Telegram message on push to Docker Hub
       uses: appleboy/telegram-action@master
       with:
@@ -56,6 +61,7 @@ jobs:
     outputs:
       output1: ${{ steps.set_results.outputs.test1 }}
       output2: ${{ steps.set_results.outputs.test2 }}
+    
     steps:
     - name: send Telegram message on test start
       uses: appleboy/telegram-action@master
@@ -63,20 +69,24 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: Test job now starts
+    
     - name: Pull Docker image
       run: |
         docker pull ${{ env.py_docker-image }} 
         docker pull ${{ env.go_docker-image }}
+    
     - name: Start docker containers
       run: | 
         docker run -d -p 8080:8080 ${{ env.py_docker-image }}
         docker run -d -p 8081:8080 ${{ env.go_docker-image }}
+    
     - id: set_results
       continue-on-error: true
       run: |
         sleep 5 # curl fails if called immediately without time delay
         echo "::set-output name=test1::$(curl http://localhost:8080 -sS 2>/dev/null)"
         echo "::set-output name=test2::$(curl http://localhost:8081 -sS 2>/dev/null)"
+    
     - name: send Telegram message on test results
       uses: appleboy/telegram-action@master
       with:
@@ -95,11 +105,13 @@ jobs:
     if: |
       needs.website_acceptance_test.outputs.output1 != '' &&
       needs.website_acceptance_test.outputs.output2 != ''
+    
     steps:
     - name: install AWS CLI
       run: |
         sudo apt-get install awscli -y
         aws --version
+    
     - name: configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
@@ -113,6 +125,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: Starting webservers in the cloud
+    
     - name: Start webservers
       run: aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }} ${{ env.and_exam_webserver2_id }}  
         
@@ -123,6 +136,7 @@ jobs:
         aws ec2 wait instance-status-ok --instance-ids ${{ env.and_exam_webserver2_id }}
         echo "::set-output name=server1_public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver1_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
         echo "::set-output name=server2_public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver2_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
+    
     - name: send Telegram message on AWS EC2 up and running
       uses: appleboy/telegram-action@master
       with:
@@ -133,10 +147,12 @@ jobs:
           webserver1: ${{ env.and_exam_webserver1_id }} @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}
           webserver2: ${{ env.and_exam_webserver2_id }} @ ${{ steps.get_webservers_ip.outputs.server2_public_ip }}
           Now pulling images to this servers and starting webapps on them
+    
     - name: pull docker images to EC2 webserver1 and webserver2 and start containers
       run: |
         aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.py_docker-image }} && docker run -d -p 80:8080 ${{ env.py_docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "pull image and run docker container"
         aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.go_docker-image }} && docker run -d -p 80:8080 ${{ env.go_docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver2_id }}" --comment "pull image and run docker container"
+    
     - name: send Telegram message on webapps ready
       uses: appleboy/telegram-action@master
       with:
@@ -145,6 +161,7 @@ jobs:
         message: |
           webserver1 now ready to serve @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}:80
           webserver2 now ready to serve @ ${{ steps.get_webservers_ip.outputs.server2_public_ip }}:80
+    
     - name: Print webserver1 and webserver2 public IPs
       run: |
         echo "webserver1 (ID: ${{ env.and_exam_webserver1_id }}) ready to serve @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}:80"
