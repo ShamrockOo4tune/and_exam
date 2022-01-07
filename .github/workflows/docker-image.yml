@@ -81,8 +81,8 @@ jobs:
         echo "::set-output name=server2_public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver2_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
     - name: pull docker images to EC2 webserver1 and webserver2 and start containers
       run: |
-        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.docker-image }} && docker run -d -p 80:8080 ${{ env.docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "pull image and run docker container"
-        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.docker-image }} && docker run -d -p 80:8080 ${{ env.docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver2_id }}" --comment "pull image and run docker container"
+        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.py_docker-image }} && docker run -d -p 80:8080 ${{ env.py_docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "pull image and run docker container"
+        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.go_docker-image }} && docker run -d -p 80:8080 ${{ env.go_docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver2_id }}" --comment "pull image and run docker container"
     - name: Print webserver1 and webserver2 public IPs
       run: |
         echo "webserver1 ready to serve @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}:80"
