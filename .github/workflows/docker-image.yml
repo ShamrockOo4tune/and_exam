@@ -148,6 +148,11 @@ jobs:
           webserver2: ${{ env.and_exam_webserver2_id }} @ ${{ steps.get_webservers_ip.outputs.server2_public_ip }}
           Now pulling images to this servers and starting webapps on them
     
+    - name: stop and remove runnung docker containers # if servers were already running prior commit
+      run: |
+        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "stop and rm docker containers"
+        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver2_id }}" --comment "stop and rm docker containers"
+    
     - name: pull docker images to EC2 webserver1 and webserver2 and start containers
       run: |
         aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.py_docker-image }} && docker run -d -p 80:8080 ${{ env.py_docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "pull image and run docker container"
