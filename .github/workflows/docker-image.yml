@@ -1,4 +1,4 @@
-name: CICD_Hello_app
+name: CICD_Hello_apps
 
 on:
   push:
@@ -8,40 +8,50 @@ env:
   AWS_REGION_NAME:        "eu-central-1"
   and_exam_webserver1_id: "i-0dfeddfbfeb6b1307"
   and_exam_webserver2_id: "i-0d82503bf53a1cd64"
-  docker-image:           "shamrockoo4tune/pyapp:${{ github.sha }}"
-  
+  py_docker-image:        "${{ secrets.DOCKER_HUB_ACCOUNT }}/pyapp:${{ github.sha }}"
+  go_docker-image:        "${{ secrets.DOCKER_HUB_ACCOUNT }}/goapp:${{ github.sha }}"
+
 jobs:
-  build_and_push_docker_image:
+  build_and_push_docker_images:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: cd ./py_program_1 && docker build . -t ${{ env.docker-image }} -f ../dockerfiles/PyDockerfile
+    - name: Build Python app Docker image
+      run: cd ./py_program_1 && docker build . -t ${{ env.py_docker-image }} -f ../dockerfiles/PyDockerfile
+    - name: Build Golang app Docker image
+      run: cd ../go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
     - name: Login to Docker Hub
-      run: docker login -u shamrockoo4tune -p ${{ secrets.SHAMROCKOO4TUNE_DOCKERHUB_PASSWORD }}
-    - name: Push to Docker Hub repo
-      run: docker push ${{ env.docker-image }}
+      run: docker login -u ${{ secrets.DOCKER_HUB_ACCOUNT }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
+    - name: Push images to Docker Hub repo
+      run: docker push ${{ env.py_docker-image }} ${{ env.go_docker-image }}
   
-  user_acceptance_test:
+  website_acceptance_test:
     runs-on: ubuntu-latest
-    needs: [ build_and_push_docker_image ]
+    needs: [ build_and_push_docker_images ]
     outputs:
-      output1: ${{ steps.set_result.outputs.test }}
+      output1: ${{ steps.set_results.outputs.test1 }}
+      output2: ${{ steps.set_results.outputs.test2 }}
     steps:
     - name: Pull Docker image
-      run: docker pull ${{ env.docker-image }}
-    - name: Start docker container
-      run: docker run -d -p 8080:8080 ${{ env.docker-image }}
-    - id: set_result
+      run: docker pull ${{ env.py_docker-image }} ${{ env.go_docker-image }}
+    - name: Start docker containers
+      run: | 
+        docker run -d -p 8080:8080 ${{ env.py_docker-image }}
+        docker run -d -p 8081:8080 ${{ env.go_docker-image }}
+    - id: set_results
       continue-on-error: true
       run: |
         sleep 5 # curl fails if called immediately without time delay
-        echo "::set-output name=test::$(curl http://localhost:8080 -sS 2>/dev/null)"
-      
+        echo "::set-output name=test1::$(curl http://localhost:8080 -sS 2>/dev/null)"
+        echo "::set-output name=test2::$(curl http://localhost:8081 -sS 2>/dev/null)"
+    
   deploy_in_aws:
     runs-on: ubuntu-latest
-    needs: [ build_and_push_docker_image, user_acceptance_test ]
-    if: needs.user_acceptance_test.outputs.output1 != '' # deploy only if test passed i.e. curl returns something from webserver 
+    needs: [ build_and_push_docker_images, website_acceptance_test ]
+    if: |
+      needs.website_acceptance_test.outputs.output1 != '' &&
+      needs.website_acceptance_test.outputs.output2 != ''
+      # deploy only if test passed i.e. curl returns something from webserver 
     steps:
     #- name: Print acceptance test result - curl reply from webserver (Hello World)
     #  run: echo ${{ needs.user_acceptance_test.outputs.output1 }}
@@ -55,16 +65,23 @@ jobs:
         aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region:            ${{ env.AWS_REGION_NAME }}
-    - name: Start webserver
-      run: aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }}  
-    - id: get_webserver1_ip
+    - name: Start webservers
+      run: aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }} ${{ env.and_exam_webserver2_id }}  
+        
+    - id: get_webservers_ip
       run: |
         # let some time for AWS EC2 to get up and running:
         aws ec2 wait instance-status-ok --instance-ids ${{ env.and_exam_webserver1_id }}
-        echo "::set-output name=public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver1_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
-    - name: pull docker image to EC2 webserver1 and start container
-      run: aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.docker-image }} && docker run -d -p 80:8080 ${{ env.docker-image }}"]' --targets "Key=instanceids,Values=i-0dfeddfbfeb6b1307" --comment "pull image and run docker container"
-    - name: Print webserver1 public IP
-      run: echo "webserver1 ready to serve @ ${{ steps.get_webserver1_ip.outputs.public_ip }}:80"
+        aws ec2 wait instance-status-ok --instance-ids ${{ env.and_exam_webserver2_id }}
+        echo "::set-output name=server1_public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver1_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
+        echo "::set-output name=server2_public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver2_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
+    - name: pull docker images to EC2 webserver1 and webserver2 and start containers
+      run: |
+        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.docker-image }} && docker run -d -p 80:8080 ${{ env.docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "pull image and run docker container"
+        aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.docker-image }} && docker run -d -p 80:8080 ${{ env.docker-image }}"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver2_id }}" --comment "pull image and run docker container"
+    - name: Print webserver1 and webserver2 public IPs
+      run: |
+        echo "webserver1 ready to serve @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}:80"
+        echo "webserver1 ready to serve @ ${{ steps.get_webservers_ip.outputs.server2_public_ip }}:80"
       
       
