@@ -19,7 +19,7 @@ jobs:
     - name: Build Python app Docker image
       run: cd ./py_program_1 && docker build . -t ${{ env.py_docker-image }} -f ../dockerfiles/PyDockerfile
     - name: Build Golang app Docker image
-      run: cd ../go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
+      run: pwd && cd ./go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
     - name: Login to Docker Hub
       run: docker login -u ${{ secrets.DOCKER_HUB_ACCOUNT }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
     - name: Push images to Docker Hub repo
