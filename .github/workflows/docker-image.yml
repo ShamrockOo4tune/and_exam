@@ -85,8 +85,8 @@ jobs:
         message: | 
           Test has been completed.
           cURL returns the following contents from the web pages
-          python webapp: ${{ curl http://localhost:8080 }}
-          golang webapp: ${{ curl http://localhost:8081 }}
+          python webapp: ${{ steps.set_results.outputs.test1 }}
+          golang webapp: ${{ steps.set_results.outputs.test2 }}
     
   deploy_in_aws:
     runs-on: ubuntu-latest
