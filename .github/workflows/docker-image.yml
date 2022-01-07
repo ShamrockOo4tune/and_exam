@@ -37,9 +37,7 @@ jobs:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          Images are ready:
-          python webapp docker image name: ${{ env.py_docker-image }}
-          golang webapp docker image name: ${{ env.go_docker-image }}
+          Images are ready now
           Pushing images to Docker Hub
     - name: Push images to Docker Hub repo
       run: |
@@ -87,10 +85,8 @@ jobs:
         message: | 
           Test has been completed.
           cURL returns the following contents from the web pages
-          python webapp: $(curl http://localhost:8080)
-          "\n"
-          golang webapp: $(curl http://localhost:8081)
-          "\n"
+          python webapp: ${{ curl http://localhost:8080 }}
+          golang webapp: ${{ curl http://localhost:8081 }}
     
   deploy_in_aws:
     runs-on: ubuntu-latest
