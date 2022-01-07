@@ -63,7 +63,7 @@ jobs:
         aws ec2 wait instance-status-ok --instance-ids ${{ env.and_exam_webserver1_id }}
         echo "::set-output name=public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver1_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
     - name: pull docker image to EC2 webserver1 and start container
-      run: aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e && docker run -d -p 80:8080 shamrockoo4tune/pyapp:7b956242d8c397a624195ed5641a67bc68a6f53e"]' --targets "Key=instanceids,Values=i-0dfeddfbfeb6b1307" --comment "pull image and run docker container"
+      run: aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker pull ${{ env.docker-image }} && docker run -d -p 80:8080 ${{ env.docker-image }}"]' --targets "Key=instanceids,Values=i-0dfeddfbfeb6b1307" --comment "pull image and run docker container"
     - name: Print webserver1 public IP
       run: echo "webserver1 ready to serve @ ${{ steps.get_webserver1_ip.outputs.public_ip }}:80"
       
