@@ -48,10 +48,10 @@ jobs:
   deploy_in_aws:
     runs-on: ubuntu-latest
     needs: [ build_and_push_docker_images, website_acceptance_test ]
+    # deploy only if test passed i.e. curl returns something from webserver 
     if: |
       needs.website_acceptance_test.outputs.output1 != '' &&
       needs.website_acceptance_test.outputs.output2 != ''
-      # deploy only if test passed i.e. curl returns something from webserver 
     steps:
     #- name: Print acceptance test result - curl reply from webserver (Hello World)
     #  run: echo ${{ needs.user_acceptance_test.outputs.output1 }}
