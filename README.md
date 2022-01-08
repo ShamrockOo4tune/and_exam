@@ -1,4 +1,4 @@
-# For english scroll down
+## For english scroll down
 Экзаменационное задание курсов DevOps компании Andersen
 
 Цель проекта: наладить и автоматизировать CI/CD приложения используя контейнеризацию docker.
@@ -19,10 +19,12 @@
 ├── py_program_1
 │   ├── app.py
 │   └── requirements.txt
+├── project_slides.pdf
 └── README.md
 
 В качестве CI/CD используется GitHub actions. GitHub actions инициируется файлом .yml в директории .github/workflows. Он настраивает автоматический запуск процесса при коммите на ветку master.
 
+Реализованная схема CI/CD схематично изображена на втором слайде project_slides.pdf
 Рабочий процесс, описанный в .yml файле требует наличия предустановленных секретов GitHub и переменных окружения:
   Учетные данные AWS CLI:
     AWS_ACCESS_KEY_ID
@@ -78,10 +80,12 @@ The structure of the project repo:
 ├── py_program_1
 │   ├── app.py
 │   └── requirements.txt
+├── project_slides.pdf
 └── README.md
 
 The CI/CD tool used is GitHub actions. Github actions are initiated by the .yml file in the .github/workflows directory. It is set to run the workflow on push to master branch of the repo.
 
+Implemented CI/CD scheme is presented on slide #2 of project_slides.pdf
 The workflow described in .yml file requires the repo to have pre set secrets and environment variables:
   AWS CLI access credentials:
     AWS_ACCESS_KEY_ID
