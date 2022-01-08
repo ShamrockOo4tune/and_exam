@@ -142,7 +142,7 @@ jobs:
     
     - name: Start webservers
       run: |
-        echo"::notice::Starting webservers in the cloud"
+        echo "::notice::Starting webservers in the cloud"
         aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }} ${{ env.and_exam_webserver2_id }}  
         
     - id: get_webservers_ip
