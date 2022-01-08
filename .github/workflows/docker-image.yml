@@ -14,7 +14,6 @@ env:
 jobs:
   build_and_push_docker_images:
     runs-on: ubuntu-latest
-    
     steps:
     - uses: actions/checkout@v2
     - name: send Telegram message on push
@@ -25,10 +24,14 @@ jobs:
         message: |
           ${{ github.actor }} created commit: ${{ github.sha }}
           Commit message: ${{ github.event.commits[0].message }}
-          Start to build images
-    
+          Start to build images        
+        
     - name: Build Python app Docker image
-      run: cd ./py_program_1 && docker build . -t ${{ env.py_docker-image }} -f ../dockerfiles/PyDockerfile
+      run: |
+        echo "::notice::${{ github.actor }} created commit: ${{ github.sha }}"
+        echo "::notice::Commit message: ${{ github.event.commits[0].message }}"
+        echo "::notice::Start to build images"
+        cd ./py_program_1 && docker build . -t ${{ env.py_docker-image }} -f ../dockerfiles/PyDockerfile
     
     - name: Build Golang app Docker image
       run: cd ./go_program_2 && docker build . -t ${{ env.go_docker-image }} -f ../dockerfiles/GoDockerfile
@@ -45,15 +48,17 @@ jobs:
     
     - name: Push images to Docker Hub repo
       run: |
+        echo "::notice::Images are ready now. Pushing them to Docker Hub"
         docker push ${{ env.py_docker-image }}
         docker push ${{ env.go_docker-image }}
+        echo "::notice::Push has been done"
     
     - name: send Telegram message on push to Docker Hub
       uses: appleboy/telegram-action@master
       with:
         to: ${{ secrets.TELEGRAM_TO }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: Push has been done
+        message: Push has been done      
   
   website_acceptance_test:
     runs-on: ubuntu-latest
@@ -72,6 +77,7 @@ jobs:
     
     - name: Pull Docker image
       run: |
+        echo "::notice::Test job now starts"
         docker pull ${{ env.py_docker-image }} 
         docker pull ${{ env.go_docker-image }}
     
@@ -98,6 +104,13 @@ jobs:
           python webapp: ${{ steps.set_results.outputs.test1 }}
           golang webapp: ${{ steps.set_results.outputs.test2 }}
     
+    - name: Print message about test results to log
+      run: |
+        echo "::notice::Test has been completed."
+        echo "::notice::cURL returns the following contents from the web pages"
+        echo "::notice::python webapp: ${{ steps.set_results.outputs.test1 }}"
+        echo "::notice::golang webapp: ${{ steps.set_results.outputs.test2 }}"
+
   deploy_in_aws:
     runs-on: ubuntu-latest
     needs: [ build_and_push_docker_images, website_acceptance_test ]
@@ -109,6 +122,7 @@ jobs:
     steps:
     - name: install AWS CLI
       run: |
+        echo "::notice::Installing AWS CLI"
         sudo apt-get install awscli -y
         aws --version
     
@@ -127,11 +141,14 @@ jobs:
         message: Starting webservers in the cloud
     
     - name: Start webservers
-      run: aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }} ${{ env.and_exam_webserver2_id }}  
+      run: |
+        echo"::notice::Starting webservers in the cloud"
+        aws ec2 start-instances --instance-ids ${{ env.and_exam_webserver1_id }} ${{ env.and_exam_webserver2_id }}  
         
     - id: get_webservers_ip
       run: |
         # let some time for AWS EC2 to get up and running:
+        echo "::notice::waiting for EC2 instances to get up and running"
         aws ec2 wait instance-status-ok --instance-ids ${{ env.and_exam_webserver1_id }}
         aws ec2 wait instance-status-ok --instance-ids ${{ env.and_exam_webserver2_id }}
         echo "::set-output name=server1_public_ip::$(aws ec2 describe-instances --filters 'Name=instance-id,Values= ${{ env.and_exam_webserver1_id }}' --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)"
@@ -150,6 +167,7 @@ jobs:
     
     - name: stop and remove runnung docker containers # if servers were already running prior commit
       run: |
+        echo "::notice::stop and remove runnung docker containers from EC2 if any"
         aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver1_id }}" --comment "stop and rm docker containers"
         aws ssm send-command --document-name "AWS-RunShellScript" --parameters 'commands=["docker stop $(docker ps -a -q) && docker rm $(docker ps -a -q)"]' --targets "Key=instanceids,Values=${{ env.and_exam_webserver2_id }}" --comment "stop and rm docker containers"
     
@@ -169,5 +187,5 @@ jobs:
     
     - name: Print webserver1 and webserver2 public IPs
       run: |
-        echo "webserver1 (ID: ${{ env.and_exam_webserver1_id }}) ready to serve @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}:80"
-        echo "webserver2 (ID: ${{ env.and_exam_webserver2_id }}) ready to serve @ ${{ steps.get_webservers_ip.outputs.server2_public_ip }}:80"
+        echo "::notice::webserver1 (ID: ${{ env.and_exam_webserver1_id }}) ready to serve @ ${{ steps.get_webservers_ip.outputs.server1_public_ip }}:80"
+        echo "::notice::webserver2 (ID: ${{ env.and_exam_webserver2_id }}) ready to serve @ ${{ steps.get_webservers_ip.outputs.server2_public_ip }}:80"
